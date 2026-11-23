@@ -1,0 +1,15 @@
+{
+  "name": "stampsbox-storefront",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Independent E-Commerce Storefront & Drag-and-Drop Admin CMS inspired by StampsBox, with reserved PayPal REST v2 integration",
+  "scripts": {
+    "dev": "concurrently -n API,WEB -c cyan,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix server run start",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

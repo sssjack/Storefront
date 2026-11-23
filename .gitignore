@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Build outputs
+client/dist/
+dist/
+*.tsbuildinfo
+
+# Environment secrets (commit .env.example instead)
+server/.env
+.env
+.env.local
+
+# Local runtime SQLite database (auto-created & seeded on first run)
+server/data/*.db
+server/data/*.db-wal
+server/data/*.db-shm
+
+# User-uploaded runtime media (keep seed artwork)
+server/uploads/*
+!server/uploads/seed/
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
