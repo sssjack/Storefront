@@ -9,9 +9,11 @@ import {
   Wifi,
   Plus,
   Trash2,
+  Upload,
 } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { useStore } from '../../context/StoreContext';
+import { BrandLogo } from '../../components/store/BrandLogo';
 import type { AdminPayPalConfig, StoreSettings } from '../../types';
 
 export function SettingsPage() {
@@ -129,6 +131,19 @@ export function SettingsPage() {
       showMsg(false, err.message || '密码修改失败');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUploadBrandAsset = async (field: 'logoUrl' | 'faviconUrl', file: File | undefined) => {
+    if (!file || !storeForm) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await apiRequest<{ url: string }>('/api/admin/media/upload', { method: 'POST', body: fd }, true);
+      setStoreForm({ ...storeForm, [field]: res.url });
+      showMsg(true, field === 'logoUrl' ? '左上角 Logo 已上传，请点击下方「保存站点设置」生效！' : 'Favicon 已上传，请点击保存生效！');
+    } catch (err: any) {
+      showMsg(false, err.message || '图片上传失败');
     }
   };
 
@@ -360,6 +375,103 @@ export function SettingsPage() {
           onSubmit={handleSaveStore}
           className="bg-white rounded-[10px] border border-[#e5e7eb] p-6 space-y-5 text-[13.5px]"
         >
+          {/* Logo & Favicon Branding Section */}
+          <div className="p-4 rounded-[10px] bg-[#f8fafc] border border-[#e2e8f0] space-y-4">
+            <h3 className="text-[14.5px] font-semibold text-[#17263b]">
+              品牌标识与图标设置（左上角网站 Logo & 浏览器标签 Favicon）
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Left-top Logo */}
+              <div className="space-y-2.5">
+                <label className="block text-[12px] font-semibold text-[#444]">
+                  左上角网站 Logo（留空则显示默认徽章）
+                </label>
+                <div className="h-16 px-4 rounded-[8px] bg-white border border-[#e5e7eb] flex items-center justify-between">
+                  <BrandLogo name={storeForm.name} logoUrl={storeForm.logoUrl} compact />
+                  {storeForm.logoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setStoreForm({ ...storeForm, logoUrl: '' })}
+                      className="text-[11.5px] text-[#db1215] hover:underline cursor-pointer"
+                    >
+                      恢复默认徽章
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={storeForm.logoUrl || ''}
+                    onChange={(e) => setStoreForm({ ...storeForm, logoUrl: e.target.value })}
+                    placeholder="输入图片 URL 或点击右侧上传"
+                    className="flex-1 bg-white border border-[#dcdcdc] rounded-[6px] px-3 py-1.5 text-[12.5px]"
+                  />
+                  <label className="px-3 py-1.5 rounded-[6px] bg-white border border-[#17263b] text-[#17263b] hover:bg-[#17263b] hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1 text-[12px] font-semibold shrink-0">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>上传 Logo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleUploadBrandAsset('logoUrl', e.target.files?.[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Browser Favicon */}
+              <div className="space-y-2.5">
+                <label className="block text-[12px] font-semibold text-[#444]">
+                  浏览器标签页图标 Favicon（建议正方形 PNG/ICO/SVG）
+                </label>
+                <div className="h-16 px-4 rounded-[8px] bg-white border border-[#e5e7eb] flex items-center justify-between">
+                  {storeForm.faviconUrl ? (
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={storeForm.faviconUrl}
+                        alt="Favicon"
+                        className="w-8 h-8 rounded object-contain border border-[#efefef]"
+                      />
+                      <span className="text-[12px] text-[#555] truncate max-w-[180px]">
+                        已设置自定义图标
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-[12px] text-[#888]">暂未上传自定义 Favicon</span>
+                  )}
+                  {storeForm.faviconUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setStoreForm({ ...storeForm, faviconUrl: '' })}
+                      className="text-[11.5px] text-[#db1215] hover:underline cursor-pointer"
+                    >
+                      清除
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={storeForm.faviconUrl || ''}
+                    onChange={(e) => setStoreForm({ ...storeForm, faviconUrl: e.target.value })}
+                    placeholder="输入图标 URL 或点击右侧上传"
+                    className="flex-1 bg-white border border-[#dcdcdc] rounded-[6px] px-3 py-1.5 text-[12.5px]"
+                  />
+                  <label className="px-3 py-1.5 rounded-[6px] bg-white border border-[#dcdcdc] hover:border-[#17263b] text-[#17263b] cursor-pointer inline-flex items-center gap-1 text-[12px] font-semibold shrink-0">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>上传图标</span>
+                    <input
+                      type="file"
+                      accept="image/*,.ico"
+                      className="hidden"
+                      onChange={(e) => handleUploadBrandAsset('faviconUrl', e.target.files?.[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-[12px] font-semibold text-[#444] mb-1">站点品牌名称</label>
@@ -371,7 +483,16 @@ export function SettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-[12px] font-semibold text-[#444] mb-1">客服邮箱</label>
+              <label className="block text-[12px] font-semibold text-[#444] mb-1">站点副标题 Tagline（浏览器标题）</label>
+              <input
+                type="text"
+                value={storeForm.tagline || ''}
+                onChange={(e) => setStoreForm({ ...storeForm, tagline: e.target.value })}
+                className="w-full border border-[#dcdcdc] rounded-[6px] px-3.5 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-[12px] font-semibold text-[#444] mb-1">底部客服邮箱</label>
               <input
                 type="email"
                 value={storeForm.email}
@@ -380,7 +501,7 @@ export function SettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-[12px] font-semibold text-[#444] mb-1">联系电话</label>
+              <label className="block text-[12px] font-semibold text-[#444] mb-1">底部联系电话</label>
               <input
                 type="text"
                 value={storeForm.phone}
@@ -388,13 +509,58 @@ export function SettingsPage() {
                 className="w-full border border-[#dcdcdc] rounded-[6px] px-3.5 py-2"
               />
             </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#444] mb-1">公司地址</label>
+            <div className="md:col-span-2">
+              <label className="block text-[12px] font-semibold text-[#444] mb-1">底部公司地址</label>
               <input
                 type="text"
                 value={storeForm.address}
                 onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
                 className="w-full border border-[#dcdcdc] rounded-[6px] px-3.5 py-2"
+              />
+            </div>
+          </div>
+
+          {/* Footer Social Links */}
+          <div className="space-y-2.5 pt-2 border-t border-[#efefef]">
+            <label className="block text-[12.5px] font-semibold text-[#17263b]">
+              底部社交媒体链接（留空则自动隐藏对应图标）
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                type="text"
+                placeholder="Facebook URL (https://facebook.com/...)"
+                value={storeForm.social?.facebook || ''}
+                onChange={(e) =>
+                  setStoreForm({ ...storeForm, social: { ...storeForm.social, facebook: e.target.value } })
+                }
+                className="border border-[#dcdcdc] rounded-[6px] px-3 py-2 text-[13px]"
+              />
+              <input
+                type="text"
+                placeholder="X / Twitter URL (https://x.com/...)"
+                value={storeForm.social?.twitter || ''}
+                onChange={(e) =>
+                  setStoreForm({ ...storeForm, social: { ...storeForm.social, twitter: e.target.value } })
+                }
+                className="border border-[#dcdcdc] rounded-[6px] px-3 py-2 text-[13px]"
+              />
+              <input
+                type="text"
+                placeholder="Instagram URL (https://instagram.com/...)"
+                value={storeForm.social?.instagram || ''}
+                onChange={(e) =>
+                  setStoreForm({ ...storeForm, social: { ...storeForm.social, instagram: e.target.value } })
+                }
+                className="border border-[#dcdcdc] rounded-[6px] px-3 py-2 text-[13px]"
+              />
+              <input
+                type="text"
+                placeholder="Threads URL (https://threads.net/...)"
+                value={storeForm.social?.threads || ''}
+                onChange={(e) =>
+                  setStoreForm({ ...storeForm, social: { ...storeForm.social, threads: e.target.value } })
+                }
+                className="border border-[#dcdcdc] rounded-[6px] px-3 py-2 text-[13px]"
               />
             </div>
           </div>

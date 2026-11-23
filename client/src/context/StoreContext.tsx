@@ -88,6 +88,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     refreshBootstrap();
   }, [refreshBootstrap]);
 
+  // Sync browser tab title & favicon when store branding changes
+  useEffect(() => {
+    if (!store) return;
+    if (store.name) {
+      document.title = store.tagline ? `${store.name} — ${store.tagline}` : store.name;
+    }
+    if (store.faviconUrl) {
+      let link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = store.faviconUrl;
+    }
+  }, [store?.name, store?.tagline, store?.faviconUrl]);
+
   useEffect(() => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
   }, [cart]);

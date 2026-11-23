@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowUpRight, ChevronDown, Mail, MapPin, Phone } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { useStore } from '../../context/StoreContext';
-import type { Article, FAQItem } from '../../types';
+import type { Article, FAQItem, CustomPage } from '../../types';
 
 export function BlogPage() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -145,37 +145,124 @@ export function FaqPage() {
   );
 }
 
-export function AboutPage() {
-  const { store } = useStore();
-  return (
-    <div className="max-w-3xl mx-auto px-5 py-14 space-y-6">
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#db1215] text-center">
-        ABOUT {store?.name || 'STAMPSBOX'}
-      </p>
-      <h1 className="font-editorial text-[34px] text-center text-[#1a1a1a] leading-tight">
-        Trusted Online Destination for Authentic US Forever® Stamps
-      </h1>
-      <p className="text-[15px] text-[#555] leading-[1.85]">
-        Founded to make buying postage online fast, transparent, and enjoyable, {store?.name || 'StampsBox'}{' '}
-        serves everyday senders, wedding stationers, collectors, and small businesses across the
-        United States. Every booklet, commemorative sheet, and 100-stamp coil roll is carefully
-        inspected and shipped directly from our California fulfillment studio.
-      </p>
-      <p className="text-[15px] text-[#555] leading-[1.85]">
-        We back every order with prompt 1–5 day First-Class Mail delivery, free shipping on orders
-        over ${Number(store?.freeShippingThreshold ?? 49.99).toFixed(2)}, secure PayPal Buyer
-        Protection, and a straightforward 30-day return guarantee.
-      </p>
-      <div className="pt-4 text-center">
+export function CustomPageView({ defaultSlug }: { defaultSlug?: string }) {
+  const params = useParams();
+  const slug = defaultSlug || params.slug || '';
+  const [page, setPage] = useState<CustomPage | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    apiRequest<{ page: CustomPage }>(`/api/pages/${encodeURIComponent(slug)}`)
+      .then((d) => {
+        if (active) setPage(d.page);
+      })
+      .catch(() => {
+        if (active) setPage(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto px-5 py-16 space-y-4 animate-pulse">
+        <div className="h-8 bg-[#f5f5f5] rounded w-2/3 mx-auto" />
+        <div className="h-4 bg-[#f5f5f5] rounded w-full" />
+        <div className="h-4 bg-[#f5f5f5] rounded w-5/6" />
+      </div>
+    );
+  }
+
+  if (!page) {
+    return (
+      <div className="max-w-2xl mx-auto px-5 py-20 text-center">
+        <h1 className="text-2xl font-medium text-[#1a1a1a]">Page Not Found</h1>
+        <p className="text-[14px] text-[#666] mt-2">This page is unpublished or does not exist.</p>
         <Link
-          to="/shop"
-          className="inline-block px-8 py-3 rounded-[6px] bg-[#1a1a1a] hover:bg-[#f04444] text-white text-[13px] font-semibold uppercase tracking-wider"
+          to="/"
+          className="inline-block mt-5 px-6 py-2.5 rounded-[6px] bg-[#1a1a1a] text-white text-[13px] font-semibold"
         >
-          Explore Our Collection
+          Back to Home
         </Link>
       </div>
+    );
+  }
+
+  const blocks = (page.content || '').split(/\n\s*\n/).filter(Boolean);
+
+  return (
+    <div className="max-w-3xl mx-auto px-5 py-14 space-y-6">
+      <div className="text-center space-y-2.5">
+        {page.kicker && (
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#db1215]">
+            {page.kicker}
+          </p>
+        )}
+        <h1 className="font-editorial text-[32px] md:text-[38px] text-[#1a1a1a] leading-tight">
+          {page.title}
+        </h1>
+        {page.subtitle && (
+          <p className="text-[15px] text-[#666] max-w-2xl mx-auto leading-relaxed">
+            {page.subtitle}
+          </p>
+        )}
+      </div>
+
+      {page.coverImage && (
+        <img
+          src={page.coverImage}
+          alt={page.title}
+          className="w-full aspect-[16/9] object-cover rounded-[10px] border border-[#ededed]"
+        />
+      )}
+
+      <div className="space-y-4 text-[15px] text-[#444] leading-[1.9] pt-2">
+        {blocks.map((block, idx) => {
+          const trimmed = block.trim();
+          if (trimmed.startsWith('## ')) {
+            return (
+              <h2 key={idx} className="text-[20px] font-semibold text-[#17263b] pt-3">
+                {trimmed.slice(3)}
+              </h2>
+            );
+          }
+          if (trimmed.startsWith('### ')) {
+            return (
+              <h3 key={idx} className="text-[17px] font-semibold text-[#1a1a1a] pt-2">
+                {trimmed.slice(4)}
+              </h3>
+            );
+          }
+          return (
+            <p key={idx} className="whitespace-pre-line">
+              {trimmed}
+            </p>
+          );
+        })}
+      </div>
+
+      {page.ctaText && (
+        <div className="pt-5 text-center">
+          <Link
+            to={page.ctaLink || '/shop'}
+            className="inline-block px-8 py-3 rounded-[6px] bg-[#1a1a1a] hover:bg-[#f04444] text-white text-[13px] font-semibold uppercase tracking-wider transition-colors"
+          >
+            {page.ctaText}
+          </Link>
+        </div>
+      )}
     </div>
   );
+}
+
+export function AboutPage() {
+  return <CustomPageView defaultSlug="about" />;
 }
 
 export function ContactPage() {
@@ -271,32 +358,5 @@ export function ContactPage() {
 }
 
 export function PoliciesPage() {
-  const { store } = useStore();
-  return (
-    <div className="max-w-3xl mx-auto px-5 py-12 space-y-8 text-[14.5px] text-[#555] leading-[1.85]">
-      <h1 className="text-[30px] font-medium text-[#1a1a1a]">Shipping, Returns & Privacy Policy</h1>
-      <section>
-        <h2 className="text-[18px] font-semibold text-[#1a1a1a] mb-2">Shipping Policy</h2>
-        <p>
-          Orders placed before 2:00 PM PST ship the same business day via USPS First-Class Mail
-          (1–5 business days). Orders totaling ${Number(store?.freeShippingThreshold ?? 49.99).toFixed(2)}{' '}
-          or more receive complimentary Standard Shipping.
-        </p>
-      </section>
-      <section>
-        <h2 className="text-[18px] font-semibold text-[#1a1a1a] mb-2">30-Day Return Policy</h2>
-        <p>
-          Unused stamps returned in original, unopened condition within 30 days of delivery qualify
-          for a full refund to your original payment method.
-        </p>
-      </section>
-      <section>
-        <h2 className="text-[18px] font-semibold text-[#1a1a1a] mb-2">Privacy & Payment Security</h2>
-        <p>
-          All transactions are processed over encrypted HTTPS channels via PayPal Checkout. We never
-          store raw payment card numbers on our servers.
-        </p>
-      </section>
-    </div>
-  );
+  return <CustomPageView defaultSlug="policies" />;
 }

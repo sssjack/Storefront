@@ -117,10 +117,20 @@ export const DEFAULT_HOME_LAYOUT = [
   },
 ];
 
+export const DEFAULT_NAV_ITEMS = [
+  { id: 'nav-home', label: 'Home', url: '/', type: 'link', visible: true },
+  { id: 'nav-best', label: 'Best Seller', url: '/shop?bestseller=true', type: 'link', visible: true },
+  { id: 'nav-cats', label: 'Forever Stamps', url: '/shop', type: 'categories_dropdown', visible: true },
+  { id: 'nav-blog', label: 'Stamp Guide', url: '/blog', type: 'link', visible: true },
+  { id: 'nav-about', label: 'About Us', url: '/page/about', type: 'page', visible: true },
+  { id: 'nav-faq', label: 'FAQ', url: '/faq', type: 'link', visible: true },
+];
+
 export const DEFAULT_STORE_SETTINGS = {
   name: 'StampsBox',
   tagline: 'Authentic US Forever Postage Stamps & Collectibles',
   logoUrl: '',
+  faviconUrl: '',
   email: 'service@stampsbox.com',
   phone: '+1 (626) 555-0194',
   address: '1014 Mission St, South Pasadena, CA 91030, USA',
@@ -134,6 +144,7 @@ export const DEFAULT_STORE_SETTINGS = {
     'Authentic US Forever® Stamps — Fast 1-5 Day First-Class Delivery',
     'Save 10% on your first order with code WELCOME10',
   ],
+  navItems: DEFAULT_NAV_ITEMS,
   footerCopyright: '© 2026 STAMPSBOX . ALL RIGHTS RESERVED.',
   social: {
     facebook: 'https://facebook.com',
@@ -290,6 +301,21 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value_json TEXT NOT NULL,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS custom_pages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      slug TEXT NOT NULL UNIQUE,
+      kicker TEXT DEFAULT '',
+      subtitle TEXT DEFAULT '',
+      cover_image TEXT DEFAULT '',
+      content TEXT DEFAULT '',
+      cta_text TEXT DEFAULT '',
+      cta_link TEXT DEFAULT '',
+      status TEXT DEFAULT 'published',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -950,6 +976,49 @@ function seedInitialData() {
       'Bulk order discount inquiry',
       'Hi! We are sending 1,500 holiday mailers for our studio next month. Do you offer custom pricing on 15 coil rolls of U.S. Flag stamps?',
       'unread'
+    );
+  }
+
+  // 10. Seed default custom pages (About Us & Policies)
+  const defaultPages = [
+    {
+      title: 'Trusted Online Destination for Authentic US Forever® Stamps',
+      slug: 'about',
+      kicker: 'ABOUT STAMPSBOX',
+      subtitle: 'Fast, transparent, and authentic postage delivered from our California studio.',
+      cover_image: '/uploads/seed/hero-flag.png',
+      content:
+        'Founded to make buying postage online fast, transparent, and enjoyable, StampsBox serves everyday senders, wedding stationers, collectors, and small businesses across the United States. Every booklet, commemorative sheet, and 100-stamp coil roll is carefully inspected and shipped directly from our California fulfillment studio.\n\n## Why Customers Choose Us\n\nWe back every order with prompt 1–5 day First-Class Mail delivery, complimentary standard shipping on qualifying orders, secure PayPal Buyer Protection, and a straightforward 30-day return guarantee.\n\n## Bulk & Business Orders\n\nWhether you are preparing 50 wedding invitations or 5,000 office mailers, our tiered coil roll formats help you save both time and postage costs.',
+      cta_text: 'Explore Our Collection',
+      cta_link: '/shop',
+    },
+    {
+      title: 'Shipping, Returns & Privacy Policy',
+      slug: 'policies',
+      kicker: 'STORE POLICIES',
+      subtitle: 'Clear shipping timelines, 30-day hassle-free returns, and payment security.',
+      cover_image: '',
+      content:
+        '## Shipping Policy\n\nOrders placed before 2:00 PM PST ship the same business day via USPS First-Class Mail (estimated delivery 1–5 business days). Orders meeting our free-shipping threshold automatically receive complimentary Standard Shipping.\n\n## 30-Day Return Policy\n\nUnused stamps returned in original, unopened condition within 30 calendar days of delivery qualify for a full refund or exchange back to your original PayPal account.\n\n## Privacy & Payment Security\n\nAll transactions are processed over encrypted HTTPS channels via PayPal Checkout. We never store raw payment card details on our servers.',
+      cta_text: 'Contact Support',
+      cta_link: '/contact',
+    },
+  ];
+  const insertPage = db.prepare(`
+    INSERT OR IGNORE INTO custom_pages (
+      title, slug, kicker, subtitle, cover_image, content, cta_text, cta_link, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'published')
+  `);
+  for (const pg of defaultPages) {
+    insertPage.run(
+      pg.title,
+      pg.slug,
+      pg.kicker,
+      pg.subtitle,
+      pg.cover_image,
+      pg.content,
+      pg.cta_text,
+      pg.cta_link
     );
   }
 }

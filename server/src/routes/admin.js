@@ -784,10 +784,102 @@ adminRouter.delete('/media/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------------- CUSTOM PAGES CMS ----------------
+adminRouter.get('/pages', (_req, res) => {
+  const rows = toPlainList(db.prepare('SELECT * FROM custom_pages ORDER BY id ASC').all());
+  res.json({
+    items: rows.map((p) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      kicker: p.kicker,
+      subtitle: p.subtitle,
+      coverImage: p.cover_image,
+      content: p.content,
+      ctaText: p.cta_text,
+      ctaLink: p.cta_link,
+      status: p.status,
+      updatedAt: p.updated_at,
+    })),
+  });
+});
+
+adminRouter.post('/pages', (req, res) => {
+  const {
+    title = '',
+    slug = '',
+    kicker = '',
+    subtitle = '',
+    coverImage = '',
+    content = '',
+    ctaText = '',
+    ctaLink = '',
+    status = 'published',
+  } = req.body || {};
+  if (!title.trim()) return res.status(400).json({ error: 'Page title is required.' });
+  let finalSlug = slugify(slug || title);
+  if (db.prepare('SELECT id FROM custom_pages WHERE slug = ?').get(finalSlug)) {
+    finalSlug = `${finalSlug}-${Date.now().toString().slice(-3)}`;
+  }
+  const info = db
+    .prepare(
+      `INSERT INTO custom_pages (title, slug, kicker, subtitle, cover_image, content, cta_text, cta_link, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      title.trim(),
+      finalSlug,
+      kicker,
+      subtitle,
+      coverImage,
+      content,
+      ctaText,
+      ctaLink,
+      status === 'draft' ? 'draft' : 'published'
+    );
+  res.status(201).json({ id: info.lastInsertRowid, slug: finalSlug });
+});
+
+adminRouter.put('/pages/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const existing = toPlain(db.prepare('SELECT * FROM custom_pages WHERE id = ?').get(id));
+  if (!existing) return res.status(404).json({ error: 'Page not found' });
+  const { title, slug, kicker, subtitle, coverImage, content, ctaText, ctaLink, status } = req.body || {};
+  db.prepare(
+    `UPDATE custom_pages SET
+      title = ?, slug = ?, kicker = ?, subtitle = ?, cover_image = ?,
+      content = ?, cta_text = ?, cta_link = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`
+  ).run(
+    title !== undefined ? String(title).trim() : existing.title,
+    slug !== undefined && String(slug).trim() ? slugify(slug) : existing.slug,
+    kicker !== undefined ? String(kicker) : existing.kicker,
+    subtitle !== undefined ? String(subtitle) : existing.subtitle,
+    coverImage !== undefined ? String(coverImage) : existing.cover_image,
+    content !== undefined ? String(content) : existing.content,
+    ctaText !== undefined ? String(ctaText) : existing.cta_text,
+    ctaLink !== undefined ? String(ctaLink) : existing.cta_link,
+    status === 'draft' || status === 'published' ? status : existing.status,
+    id
+  );
+  res.json({ ok: true });
+});
+
+adminRouter.delete('/pages/:id', (req, res) => {
+  db.prepare('DELETE FROM custom_pages WHERE id = ?').run(Number(req.params.id));
+  res.json({ ok: true });
+});
+
 // ---------------- STORE & PAYPAL SETTINGS ----------------
 adminRouter.get('/settings', (_req, res) => {
   const storeRow = db.prepare('SELECT value_json FROM settings WHERE key = ?').get('store');
-  const store = storeRow ? { ...DEFAULT_STORE_SETTINGS, ...JSON.parse(storeRow.value_json) } : DEFAULT_STORE_SETTINGS;
+  const parsed = storeRow ? JSON.parse(storeRow.value_json) : {};
+  const store = {
+    ...DEFAULT_STORE_SETTINGS,
+    ...parsed,
+    navItems: Array.isArray(parsed.navItems) ? parsed.navItems : DEFAULT_STORE_SETTINGS.navItems,
+    social: { ...DEFAULT_STORE_SETTINGS.social, ...(parsed.social || {}) },
+  };
   const paypal = getAdminPayPalConfig(db);
   res.json({ store, paypal });
 });

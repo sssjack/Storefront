@@ -15,12 +15,14 @@ import {
   AboutPage,
   ContactPage,
   PoliciesPage,
+  CustomPageView,
 } from './pages/store/ContentPages';
 
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { DashboardPage } from './pages/admin/DashboardPage';
 import { PageBuilderPage } from './pages/admin/PageBuilderPage';
+import { NavigationPagesPage } from './pages/admin/NavigationPagesPage';
 import { ProductsPage } from './pages/admin/ProductsPage';
 import { CategoriesPage } from './pages/admin/CategoriesPage';
 import { OrdersPage } from './pages/admin/OrdersPage';
@@ -48,6 +50,7 @@ export default function App() {
             <Route path="about" element={<AboutPage />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="policies" element={<PoliciesPage />} />
+            <Route path="page/:slug" element={<CustomPageView />} />
           </Route>
 
           {/* Merchant Admin Console Routes */}
@@ -55,6 +58,7 @@ export default function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="builder" element={<PageBuilderPage />} />
+            <Route path="navigation" element={<NavigationPagesPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="orders" element={<OrdersPage />} />

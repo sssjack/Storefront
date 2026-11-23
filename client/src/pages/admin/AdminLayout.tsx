@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Layers,
+  Compass,
   Package,
   FolderTree,
   ShoppingCart,
@@ -19,6 +20,7 @@ import { apiRequest, clearAdminToken, getAdminToken } from '../../lib/api';
 const NAV_ITEMS = [
   { to: '/admin', end: true, label: '数据概览', sub: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/builder', end: false, label: '拖拽布局装修', sub: 'Page Builder', icon: Layers },
+  { to: '/admin/navigation', end: false, label: '导航与栏目页面', sub: 'Menus & Pages', icon: Compass },
   { to: '/admin/products', end: false, label: '商品管理', sub: 'Products', icon: Package },
   { to: '/admin/categories', end: false, label: '分类管理', sub: 'Categories', icon: FolderTree },
   { to: '/admin/orders', end: false, label: '订单管理', sub: 'Orders', icon: ShoppingCart },

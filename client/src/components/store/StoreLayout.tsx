@@ -34,6 +34,28 @@ export function StoreLayout() {
     ? store.announcements
     : ['Free shipping on orders of $49.99 or more'];
 
+  const navItems = (
+    store?.navItems?.length
+      ? store.navItems
+      : [
+          { id: 'nav-home', label: 'Home', url: '/', type: 'link' as const, visible: true },
+          { id: 'nav-best', label: 'Best Seller', url: '/shop?bestseller=true', type: 'link' as const, visible: true },
+          { id: 'nav-cats', label: 'Forever Stamps', url: '/shop', type: 'categories_dropdown' as const, visible: true },
+          { id: 'nav-blog', label: 'Stamp Guide', url: '/blog', type: 'link' as const, visible: true },
+          { id: 'nav-about', label: 'About Us', url: '/page/about', type: 'page' as const, visible: true },
+          { id: 'nav-faq', label: 'FAQ', url: '/faq', type: 'link' as const, visible: true },
+        ]
+  ).filter((item) => item.visible !== false);
+
+  const isExternalUrl = (url: string) => /^https?:\/\//i.test(url);
+
+  const socialLinks = [
+    { label: 'FB', href: store?.social?.facebook || '' },
+    { label: 'X', href: store?.social?.twitter || '' },
+    { label: 'IG', href: store?.social?.instagram || '' },
+    { label: 'TH', href: store?.social?.threads || '' },
+  ].filter((s) => s.href.trim() !== '');
+
   useEffect(() => {
     setMobileMenuOpen(false);
     setDropdownOpen(false);
@@ -117,70 +139,83 @@ export function StoreLayout() {
             </Link>
           </div>
 
-          {/* Center: Desktop Navigation */}
+          {/* Center: Desktop Navigation (Dynamic from Admin Settings) */}
           <nav className="hidden lg:flex items-center gap-7 font-albert text-[14.5px] font-medium tracking-[0.4px] uppercase text-[#1a1a1a]">
-            <Link
-              to="/"
-              className={`hover:text-[#db1215] transition-colors py-1 ${
-                location.pathname === '/' ? 'text-[#db1215]' : ''
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              to="/shop?bestseller=true"
-              className="hover:text-[#db1215] transition-colors py-1"
-            >
-              Best Seller
-            </Link>
-
-            {/* Dropdown: Forever Stamps / Categories */}
-            <div
-              className="relative"
-              onMouseEnter={() => setDropdownOpen(true)}
-              onMouseLeave={() => setDropdownOpen(false)}
-            >
-              <Link
-                to="/shop"
-                className="inline-flex items-center gap-1 hover:text-[#db1215] transition-colors py-2"
-              >
-                Forever Stamps
-                <ChevronDown className="w-3.5 h-3.5" />
-              </Link>
-              {dropdownOpen && (
-                <div className="absolute left-0 top-full pt-1 w-60 z-50">
-                  <div className="bg-white border border-[#e8e8e8] rounded-[10px] shadow-lg py-2 normal-case tracking-normal">
+            {navItems.map((item) => {
+              if (item.type === 'categories_dropdown') {
+                return (
+                  <div
+                    key={item.id}
+                    className="relative"
+                    onMouseEnter={() => setDropdownOpen(true)}
+                    onMouseLeave={() => setDropdownOpen(false)}
+                  >
                     <Link
-                      to="/shop"
-                      className="block px-4 py-2 text-[13.5px] font-medium text-[#1a1a1a] hover:bg-[#fff5f5] hover:text-[#db1215]"
+                      to={item.url || '/shop'}
+                      className="inline-flex items-center gap-1 hover:text-[#db1215] transition-colors py-2"
                     >
-                      All Stamps
+                      {item.label}
+                      <ChevronDown className="w-3.5 h-3.5" />
                     </Link>
-                    <div className="my-1 border-t border-[#f0f0f0]" />
-                    {categories.map((cat) => (
-                      <Link
-                        key={cat.id}
-                        to={`/collections/${cat.slug}`}
-                        className="flex items-center justify-between px-4 py-2 text-[13.5px] text-[#333] hover:bg-[#fff5f5] hover:text-[#db1215]"
-                      >
-                        <span>{cat.name}</span>
-                        <span className="text-[11px] text-[#999]">{cat.productCount}</span>
-                      </Link>
-                    ))}
+                    {dropdownOpen && (
+                      <div className="absolute left-0 top-full pt-1 w-60 z-50">
+                        <div className="bg-white border border-[#e8e8e8] rounded-[10px] shadow-lg py-2 normal-case tracking-normal">
+                          <Link
+                            to="/shop"
+                            className="block px-4 py-2 text-[13.5px] font-medium text-[#1a1a1a] hover:bg-[#fff5f5] hover:text-[#db1215]"
+                          >
+                            All Stamps
+                          </Link>
+                          <div className="my-1 border-t border-[#f0f0f0]" />
+                          {categories.map((cat) => (
+                            <Link
+                              key={cat.id}
+                              to={`/collections/${cat.slug}`}
+                              className="flex items-center justify-between px-4 py-2 text-[13.5px] text-[#333] hover:bg-[#fff5f5] hover:text-[#db1215]"
+                            >
+                              <span>{cat.name}</span>
+                              <span className="text-[11px] text-[#999]">{cat.productCount}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
+                );
+              }
 
-            <Link to="/blog" className="hover:text-[#db1215] transition-colors py-1">
-              Stamp Guide
-            </Link>
-            <Link to="/about" className="hover:text-[#db1215] transition-colors py-1">
-              About Us
-            </Link>
-            <Link to="/faq" className="hover:text-[#db1215] transition-colors py-1">
-              FAQ
-            </Link>
+              if (isExternalUrl(item.url)) {
+                return (
+                  <a
+                    key={item.id}
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-[#db1215] transition-colors py-1"
+                  >
+                    {item.label}
+                  </a>
+                );
+              }
+
+              const active =
+                item.url === '/'
+                  ? location.pathname === '/'
+                  : location.pathname === item.url ||
+                    (item.url === '/page/about' && location.pathname === '/about');
+
+              return (
+                <Link
+                  key={item.id}
+                  to={item.url || '/'}
+                  className={`hover:text-[#db1215] transition-colors py-1 ${
+                    active ? 'text-[#db1215]' : ''
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Right: Utility Icons */}
@@ -246,31 +281,33 @@ export function StoreLayout() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-1 text-[14.5px] font-medium">
-              <Link to="/" className="block py-2.5 border-b border-[#f3f3f3]">
-                Home
-              </Link>
-              <Link to="/shop?bestseller=true" className="block py-2.5 border-b border-[#f3f3f3]">
-                Best Seller
-              </Link>
-              <Link to="/shop" className="block py-2.5 border-b border-[#f3f3f3]">
-                All Forever Stamps
-              </Link>
-              <div className="pl-3 py-1 space-y-1 text-[13.5px] font-normal text-[#555]">
-                {categories.map((c) => (
-                  <Link key={c.id} to={`/collections/${c.slug}`} className="block py-1.5">
-                    {c.name}
-                  </Link>
-                ))}
-              </div>
-              <Link to="/blog" className="block py-2.5 border-b border-[#f3f3f3]">
-                Stamp Guide
-              </Link>
-              <Link to="/about" className="block py-2.5 border-b border-[#f3f3f3]">
-                About Us
-              </Link>
-              <Link to="/faq" className="block py-2.5 border-b border-[#f3f3f3]">
-                FAQ
-              </Link>
+              {navItems.map((item) => (
+                <React.Fragment key={item.id}>
+                  {isExternalUrl(item.url) ? (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block py-2.5 border-b border-[#f3f3f3]"
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link to={item.url || '/'} className="block py-2.5 border-b border-[#f3f3f3]">
+                      {item.label}
+                    </Link>
+                  )}
+                  {item.type === 'categories_dropdown' && (
+                    <div className="pl-3 py-1 space-y-1 text-[13.5px] font-normal text-[#555]">
+                      {categories.map((c) => (
+                        <Link key={c.id} to={`/collections/${c.slug}`} className="block py-1.5">
+                          {c.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
               <Link to="/contact" className="block py-2.5 border-b border-[#f3f3f3]">
                 Contact Us
               </Link>
@@ -303,18 +340,21 @@ export function StoreLayout() {
               {store?.email || 'service@stampsbox.com'}
             </p>
             {store?.phone && <p className="text-[12.5px] text-[#999] mt-1">{store.phone}</p>}
-            <div className="flex items-center gap-2.5 mt-5">
-              {(['FB', 'X', 'IG', 'TH'] as const).map((label) => (
-                <a
-                  key={label}
-                  href="#social"
-                  onClick={(e) => e.preventDefault()}
-                  className="w-8 h-8 rounded-full border border-[#3a3a3a] hover:border-white hover:text-white flex items-center justify-center text-[11px] font-semibold transition-colors"
-                >
-                  {label}
-                </a>
-              ))}
-            </div>
+            {socialLinks.length > 0 && (
+              <div className="flex items-center gap-2.5 mt-5">
+                {socialLinks.map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-8 h-8 rounded-full border border-[#3a3a3a] hover:border-white hover:text-white flex items-center justify-center text-[11px] font-semibold transition-colors"
+                  >
+                    {s.label}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Column 2: Categories */}

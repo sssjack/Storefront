@@ -1,7 +1,30 @@
+export interface NavItem {
+  id: string;
+  label: string;
+  url: string;
+  type: 'link' | 'categories_dropdown' | 'page';
+  visible: boolean;
+}
+
+export interface CustomPage {
+  id: number;
+  title: string;
+  slug: string;
+  kicker: string;
+  subtitle: string;
+  coverImage: string;
+  content: string;
+  ctaText: string;
+  ctaLink: string;
+  status: 'published' | 'draft';
+  updatedAt?: string;
+}
+
 export interface StoreSettings {
   name: string;
   tagline: string;
   logoUrl: string;
+  faviconUrl?: string;
   email: string;
   phone: string;
   address: string;
@@ -11,6 +34,7 @@ export interface StoreSettings {
   standardShippingFee: number;
   expressShippingFee: number;
   announcements: string[];
+  navItems?: NavItem[];
   footerCopyright: string;
   social: {
     facebook: string;

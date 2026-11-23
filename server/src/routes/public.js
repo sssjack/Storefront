@@ -49,7 +49,13 @@ function formatProduct(row) {
 
 function getStoreSettings() {
   const row = db.prepare('SELECT value_json FROM settings WHERE key = ?').get('store');
-  return row ? { ...DEFAULT_STORE_SETTINGS, ...JSON.parse(row.value_json) } : DEFAULT_STORE_SETTINGS;
+  const parsed = row ? JSON.parse(row.value_json) : {};
+  return {
+    ...DEFAULT_STORE_SETTINGS,
+    ...parsed,
+    navItems: Array.isArray(parsed.navItems) ? parsed.navItems : DEFAULT_STORE_SETTINGS.navItems,
+    social: { ...DEFAULT_STORE_SETTINGS.social, ...(parsed.social || {}) },
+  };
 }
 
 // Bootstrap storefront config, categories, homepage layout, and public PayPal status
@@ -76,11 +82,42 @@ publicRouter.get('/store/bootstrap', (_req, res) => {
     productCount: c.product_count,
   }));
 
+  const pages = toPlainList(
+    db
+      .prepare("SELECT id, title, slug FROM custom_pages WHERE status = 'published' ORDER BY id ASC")
+      .all()
+  );
+
   const layoutRow = db.prepare('SELECT blocks_json FROM page_layouts WHERE page_key = ?').get('home');
   const homeLayout = layoutRow ? JSON.parse(layoutRow.blocks_json) : DEFAULT_HOME_LAYOUT;
   const paypal = getPublicPayPalConfig(db);
 
-  res.json({ store, categories, homeLayout, paypal });
+  res.json({ store, categories, pages, homeLayout, paypal });
+});
+
+// Public Custom Page by slug
+publicRouter.get('/pages/:slug', (req, res) => {
+  const row = toPlain(
+    db
+      .prepare("SELECT * FROM custom_pages WHERE slug = ? AND status = 'published'")
+      .get(req.params.slug)
+  );
+  if (!row) return res.status(404).json({ error: 'Page not found' });
+  res.json({
+    page: {
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      kicker: row.kicker,
+      subtitle: row.subtitle,
+      coverImage: row.cover_image,
+      content: row.content,
+      ctaText: row.cta_text,
+      ctaLink: row.cta_link,
+      status: row.status,
+      updatedAt: row.updated_at,
+    },
+  });
 });
 
 // List published products with filtering & sorting
